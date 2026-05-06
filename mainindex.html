@@ -1,0 +1,417 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Pay Securely · RazorPay</title>
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet"/>
+  <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+  <style>
+    :root {
+      --bg: #0b0c10;
+      --surface: #13141a;
+      --border: #1f2130;
+      --accent: #6c63ff;
+      --accent-glow: rgba(108,99,255,0.35);
+      --accent2: #00d4aa;
+      --text: #eeeef2;
+      --muted: #7a7b8e;
+      --error: #ff5e6c;
+      --success: #00d4aa;
+      --radius: 16px;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: var(--bg);
+      font-family: 'DM Sans', sans-serif;
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+      position: relative;
+    }
+
+    /* Ambient background blobs */
+    body::before {
+      content: '';
+      position: fixed;
+      top: -200px; left: -200px;
+      width: 600px; height: 600px;
+      background: radial-gradient(circle, rgba(108,99,255,0.15) 0%, transparent 70%);
+      border-radius: 50%;
+      animation: drift 12s ease-in-out infinite alternate;
+      pointer-events: none;
+    }
+    body::after {
+      content: '';
+      position: fixed;
+      bottom: -150px; right: -150px;
+      width: 500px; height: 500px;
+      background: radial-gradient(circle, rgba(0,212,170,0.1) 0%, transparent 70%);
+      border-radius: 50%;
+      animation: drift 16s ease-in-out infinite alternate-reverse;
+      pointer-events: none;
+    }
+
+    @keyframes drift {
+      from { transform: translate(0, 0) scale(1); }
+      to   { transform: translate(60px, 40px) scale(1.1); }
+    }
+
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 24px;
+      padding: 48px 44px;
+      width: 100%;
+      max-width: 460px;
+      position: relative;
+      z-index: 1;
+      box-shadow: 0 0 60px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,255,255,0.03) inset;
+      animation: slideUp 0.6s cubic-bezier(0.22, 1, 0.36, 1) both;
+    }
+
+    @keyframes slideUp {
+      from { opacity: 0; transform: translateY(40px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 32px;
+    }
+    .brand-icon {
+      width: 36px; height: 36px;
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      border-radius: 10px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 18px;
+    }
+    .brand-name {
+      font-family: 'Syne', sans-serif;
+      font-weight: 800;
+      font-size: 18px;
+      letter-spacing: -0.5px;
+    }
+    .brand-name span { color: var(--accent); }
+
+    .order-box {
+      background: linear-gradient(135deg, rgba(108,99,255,0.1), rgba(0,212,170,0.06));
+      border: 1px solid rgba(108,99,255,0.2);
+      border-radius: var(--radius);
+      padding: 20px;
+      margin-bottom: 28px;
+    }
+    .order-label {
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+      color: var(--muted);
+      margin-bottom: 6px;
+    }
+    .order-amount {
+      font-family: 'Syne', sans-serif;
+      font-size: 36px;
+      font-weight: 800;
+      background: linear-gradient(135deg, var(--text), var(--accent2));
+      background-clip: text;
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    .order-desc {
+      font-size: 13px;
+      color: var(--muted);
+      margin-top: 4px;
+    }
+
+    h2 {
+      font-family: 'Syne', sans-serif;
+      font-size: 22px;
+      font-weight: 700;
+      margin-bottom: 24px;
+      letter-spacing: -0.5px;
+    }
+
+    .field {
+      margin-bottom: 18px;
+    }
+    label {
+      display: block;
+      font-size: 12px;
+      font-weight: 500;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-bottom: 8px;
+    }
+    input {
+      width: 100%;
+      background: rgba(255,255,255,0.04);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 13px 16px;
+      color: var(--text);
+      font-family: 'DM Sans', sans-serif;
+      font-size: 15px;
+      outline: none;
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+    input::placeholder { color: #3a3b50; }
+    input:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px var(--accent-glow);
+    }
+    input.error-field { border-color: var(--error); }
+
+    .row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+
+    .btn {
+      width: 100%;
+      margin-top: 8px;
+      padding: 16px;
+      background: linear-gradient(135deg, var(--accent), #8b5cf6);
+      border: none;
+      border-radius: 12px;
+      color: #fff;
+      font-family: 'Syne', sans-serif;
+      font-size: 16px;
+      font-weight: 700;
+      letter-spacing: 0.3px;
+      cursor: pointer;
+      position: relative;
+      overflow: hidden;
+      transition: transform 0.15s, box-shadow 0.15s;
+      box-shadow: 0 4px 20px rgba(108,99,255,0.4);
+    }
+    .btn::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: rgba(255,255,255,0);
+      transition: background 0.2s;
+    }
+    .btn:hover { transform: translateY(-2px); box-shadow: 0 8px 30px rgba(108,99,255,0.5); }
+    .btn:hover::after { background: rgba(255,255,255,0.07); }
+    .btn:active { transform: translateY(0); }
+    .btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+    .btn.loading { pointer-events: none; }
+    .btn.loading .btn-text { opacity: 0; }
+    .btn.loading .spinner { display: block; }
+    .spinner {
+      display: none;
+      position: absolute;
+      top: 50%; left: 50%;
+      transform: translate(-50%, -50%);
+      width: 20px; height: 20px;
+      border: 2px solid rgba(255,255,255,0.3);
+      border-top-color: #fff;
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+    }
+    @keyframes spin { to { transform: translate(-50%,-50%) rotate(360deg); } }
+
+    .secure-note {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      font-size: 12px;
+      color: var(--muted);
+      margin-top: 16px;
+    }
+    .secure-note svg { color: var(--accent2); flex-shrink: 0; }
+
+    .toast {
+      position: fixed;
+      bottom: 28px; left: 50%;
+      transform: translateX(-50%) translateY(80px);
+      padding: 14px 24px;
+      border-radius: 12px;
+      font-size: 14px;
+      font-weight: 500;
+      z-index: 999;
+      transition: transform 0.4s cubic-bezier(0.22,1,0.36,1), opacity 0.3s;
+      opacity: 0;
+      white-space: nowrap;
+      display: flex; align-items: center; gap: 8px;
+    }
+    .toast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
+    .toast.success { background: rgba(0,212,170,0.15); border: 1px solid rgba(0,212,170,0.3); color: var(--success); }
+    .toast.error   { background: rgba(255,94,108,0.15); border: 1px solid rgba(255,94,108,0.3); color: var(--error); }
+
+    .divider {
+      display: flex; align-items: center; gap: 12px;
+      margin: 24px 0 0;
+      color: var(--muted); font-size: 12px;
+    }
+    .divider::before, .divider::after {
+      content: ''; flex: 1; height: 1px; background: var(--border);
+    }
+
+    .powered {
+      text-align: center;
+      font-size: 11px;
+      color: var(--muted);
+      margin-top: 14px;
+      letter-spacing: 0.5px;
+    }
+    .powered span { color: #528ff0; }
+  </style>
+</head>
+<body>
+
+<div class="card">
+  <div class="brand">
+    <div class="brand-icon">⚡</div>
+    <div class="brand-name">Pay<span>Swift</span></div>
+  </div>
+
+  <div class="order-box">
+    <div class="order-label">Amount Due</div>
+    <div class="order-amount">₹1.00</div>
+    <div class="order-desc">Premium Plan · Monthly Subscription</div>
+  </div>
+
+  <h2>Billing Details</h2>
+
+  <div class="field">
+    <label>Full Name</label>
+    <input type="text" id="name" placeholder="Rahul Sharma" autocomplete="name"/>
+  </div>
+  <div class="field">
+    <label>Email Address</label>
+    <input type="email" id="email" placeholder="rahul@example.com" autocomplete="email"/>
+  </div>
+  <div class="field">
+    <label>Phone Number</label>
+    <input type="tel" id="phone" placeholder="+91 98765 43210" autocomplete="tel"/>
+  </div>
+
+  <button class="btn" id="payBtn" onclick="initiatePayment()">
+    <span class="btn-text">Pay ₹1 Securely</span>
+    <span class="spinner"></span>
+  </button>
+
+  <div class="secure-note">
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+      <rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+    </svg>
+    256-bit SSL encrypted · Powered by Razorpay
+  </div>
+
+  <div class="divider">or pay using UPI · Cards · NetBanking</div>
+  <div class="powered">Secured by <span>Razorpay</span> Payment Gateway</div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+  const BACKEND = 'http://localhost:8000'; // Change to your FastAPI URL
+
+  function showToast(msg, type = 'success') {
+    const t = document.getElementById('toast');
+    t.textContent = (type === 'success' ? '✓ ' : '✗ ') + msg;
+    t.className = `toast ${type} show`;
+    setTimeout(() => t.classList.remove('show'), 4000);
+  }
+
+  function setLoading(on) {
+    const btn = document.getElementById('payBtn');
+    btn.classList.toggle('loading', on);
+    btn.disabled = on;
+  }
+
+  function validate() {
+    const name  = document.getElementById('name').value.trim();
+    const email = document.getElementById('email').value.trim();
+    const phone = document.getElementById('phone').value.trim();
+    const emailRx = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    const phoneRx = /^[+]?[\d\s\-]{7,15}$/;
+
+    ['name','email','phone'].forEach(id => document.getElementById(id).classList.remove('error-field'));
+
+    if (!name) { document.getElementById('name').classList.add('error-field'); showToast('Please enter your name', 'error'); return false; }
+    if (!emailRx.test(email)) { document.getElementById('email').classList.add('error-field'); showToast('Enter a valid email', 'error'); return false; }
+    if (!phoneRx.test(phone)) { document.getElementById('phone').classList.add('error-field'); showToast('Enter a valid phone number', 'error'); return false; }
+    return true;
+  }
+
+  async function initiatePayment() {
+    if (!validate()) return;
+    setLoading(true);
+
+    try {
+      // 1. Create order on backend
+      const res = await fetch(`${BACKEND}/create-order`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ amount: 1, currency: 'INR', receipt: 'receipt_001' })
+      });
+
+      if (!res.ok) throw new Error('Failed to create order');
+      const order = await res.json();
+
+      // 2. Open Razorpay Checkout
+      const options = {
+        key: order.razorpay_key_id,        // From backend
+        amount: order.amount,
+        currency: order.currency,
+        name: 'PaySwift',
+        description: 'Premium Plan · Monthly',
+        image: '',
+        order_id: order.order_id,
+        prefill: {
+          name:  document.getElementById('name').value.trim(),
+          email: document.getElementById('email').value.trim(),
+          contact: document.getElementById('phone').value.trim(),
+        },
+        theme: { color: '#6c63ff' },
+        handler: async function (response) {
+          // 3. Verify payment on backend
+          try {
+            const vRes = await fetch(`${BACKEND}/verify-payment`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                razorpay_order_id:   response.razorpay_order_id,
+                razorpay_payment_id: response.razorpay_payment_id,
+                razorpay_signature:  response.razorpay_signature
+              })
+            });
+            const vData = await vRes.json();
+            if (vData.status === 'success') {
+              showToast('Payment successful! 🎉', 'success');
+            } else {
+              showToast('Payment verification failed', 'error');
+            }
+          } catch {
+            showToast('Verification error. Contact support.', 'error');
+          }
+          setLoading(false);
+        },
+        modal: {
+          ondismiss: () => setLoading(false)
+        }
+      };
+
+      const rzp = new Razorpay(options);
+      rzp.on('payment.failed', function (response) {
+        showToast(`Payment failed: ${response.error.description}`, 'error');
+        setLoading(false);
+      });
+      rzp.open();
+
+    } catch (err) {
+      showToast(err.message || 'Something went wrong', 'error');
+      setLoading(false);
+    }
+  }
+</script>
+</body>
+</html>
